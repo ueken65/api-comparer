@@ -1,12 +1,12 @@
 import Line from './Line'
 
 type Props = {
-  json: string
+  text: string
   loading: boolean
 }
 
-const JsonViewer: React.FC<Props> = ({ json, loading }) => {
-  const jsonLines = json.split('\n')
+const ResultViewer: React.FC<Props> = ({ text, loading }) => {
+  const textLines = text.split('\n')
 
   return (
     <div className="bg-gray-200 p-5">
@@ -15,7 +15,7 @@ const JsonViewer: React.FC<Props> = ({ json, loading }) => {
           '読み込み中...'
         ) : (
           <>
-            {jsonLines.map((line, i) => (
+            {textLines.map((line, i) => (
               <Line key={i} text={line} />
             ))}
           </>
@@ -25,4 +25,4 @@ const JsonViewer: React.FC<Props> = ({ json, loading }) => {
   )
 }
 
-export default JsonViewer
+export default ResultViewer

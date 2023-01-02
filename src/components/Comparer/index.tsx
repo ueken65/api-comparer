@@ -1,36 +1,56 @@
+import assert from 'assert'
 import * as jsonDiff from 'json-diff'
 import { useState } from 'react'
 import JsonFetcher from './JsonFetcher'
-import JsonViewer from './JsonViewer'
+import JsonViewer from './ResultViewer'
+
+type FetchResponse = {
+  url: URL
+  json: Record<string, unknown>
+}
 
 export const Comparer = () => {
-  const [json, setJson] = useState<{ A: Record<string, unknown> | null; B: Record<string, unknown> | null }>({
+  const [json, setJson] = useState<{ A: FetchResponse | null; B: FetchResponse | null }>({
     A: null,
     B: null,
   })
   const [comparedString, setComparedString] = useState<string>()
   const [keysOnly, setKeysOnly] = useState(false)
 
-  const setJsonA = (json: Record<string, unknown>) =>
+  const setJsonA = (url: URL, json: Record<string, unknown>) =>
     setJson((prev) => {
-      return { ...prev, A: json }
+      return { ...prev, A: { url, json } }
     })
 
-  const setJsonB = (json: Record<string, unknown>) =>
+  const resetJsonA = () =>
     setJson((prev) => {
-      return { ...prev, B: json }
+      return { ...prev, A: null }
+    })
+
+  const setJsonB = (url: URL, json: Record<string, unknown>) =>
+    setJson((prev) => {
+      return { ...prev, B: { url, json } }
+    })
+
+  const resetJsonB = () =>
+    setJson((prev) => {
+      return { ...prev, B: null }
     })
 
   const handleOnClickCompareButton = () => {
-    if (jsonDiff.diff(json.A, json.B, { keysOnly }) === undefined) {
+    assert(json.A !== null && json.B !== null)
+
+    if (jsonDiff.diff(json.A.json, json.B.json, { keysOnly }) === undefined) {
       setComparedString('no diff.')
     } else {
-      const diff = jsonDiff.diffString(json.A, json.B, {
+      const diff = jsonDiff.diffString(json.A.json, json.B.json, {
         color: false,
         full: true,
         keysOnly,
       })
-      setComparedString(diff)
+
+      const prefix = `--- ${json.A.url.toString()}\n+++ ${json.B.url.toString()} \n`
+      setComparedString(prefix + diff)
     }
   }
 
@@ -45,10 +65,18 @@ export const Comparer = () => {
       </div>
       <div className="grid grid-cols-3 gap-5">
         <div>
-          <JsonFetcher json={json.A ? JSON.stringify(json.A, null, '  ') : '{}'} setJson={setJsonA} />
+          <JsonFetcher
+            json={json.A ? JSON.stringify(json.A.json, null, '  ') : '{}'}
+            setJson={setJsonA}
+            resetJson={resetJsonA}
+          />
         </div>
         <div>
-          <JsonFetcher json={json.B ? JSON.stringify(json.B, null, '  ') : '{}'} setJson={setJsonB} />
+          <JsonFetcher
+            json={json.B ? JSON.stringify(json.B.json, null, '  ') : '{}'}
+            setJson={setJsonB}
+            resetJson={resetJsonB}
+          />
         </div>
         <div>
           <button
@@ -58,7 +86,7 @@ export const Comparer = () => {
           >
             比較
           </button>
-          <JsonViewer json={comparedString ?? ''} loading={false} />
+          <JsonViewer text={comparedString ?? ''} loading={false} />
         </div>
       </div>
     </div>

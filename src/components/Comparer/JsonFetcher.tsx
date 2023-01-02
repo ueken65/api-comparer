@@ -1,22 +1,25 @@
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import { KeyboardEvent, useRef, useState } from 'react'
-import JsonViewer from './JsonViewer'
+import ResultViewer from './ResultViewer'
 
 type Props = {
   json: string
-  setJson: (json: Record<string, unknown>) => void
+  setJson: (url: URL, json: Record<string, unknown>) => void
+  resetJson: () => void
 }
 
 const schema = z.object({ url: z.string().url() })
 
 type SchemaType = z.infer<typeof schema>
 
-const JsonFetcher: React.FC<Props> = ({ json, setJson }) => {
+const JsonFetcher: React.FC<Props> = ({ json, setJson, resetJson }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null)
-  const [loading, setLoading] = useState(false)
+  const [fetchState, setFetchState] = useState<{ loading: boolean; error?: string }>({
+    loading: false,
+  })
   const {
     register,
     getValues,
@@ -30,21 +33,32 @@ const JsonFetcher: React.FC<Props> = ({ json, setJson }) => {
   }
 
   const onClickSubmitButton = async () => {
-    setLoading(true)
+    setFetchState({ loading: true })
 
     const url = new URL(getValues('url'))
-    const res = await axios.get(url.toString())
 
-    setLoading(false)
+    try {
+      const res = await axios.get(url.toString())
 
-    setJson(res.data)
+      setFetchState({ loading: false })
+      setJson(url, res.data)
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        setFetchState({ loading: false, error: error.message })
+        resetJson()
+
+        return
+      }
+
+      throw error
+    }
   }
 
   return (
     <div>
       <div className="flex gap-2 items-center mb-2">
         <input
-          className="border border-gray-300 rounded flex-grow"
+          className="border border-gray-300 rounded flex-grow px-2"
           placeholder="https://example.com/api/v2/home"
           onKeyUp={onKeyUpInput}
           {...register('url')}
@@ -52,14 +66,14 @@ const JsonFetcher: React.FC<Props> = ({ json, setJson }) => {
         <button
           type="submit"
           ref={submitButtonRef}
-          disabled={!isValid}
+          disabled={!isValid || fetchState.loading}
           className="py-1 px-3 bg-blue-600 text-white rounded disabled:bg-slate-400 disabled:text-gray-200"
           onClick={onClickSubmitButton}
         >
           JSONを取得
         </button>
       </div>
-      <JsonViewer json={json} loading={loading} />
+      <ResultViewer text={fetchState.error ?? json} loading={fetchState.loading} />
     </div>
   )
 }
