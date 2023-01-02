@@ -10,7 +10,7 @@ type FetchResponse = {
 }
 
 export const Comparer = () => {
-  const [json, setJson] = useState<{ A: FetchResponse | null; B: FetchResponse | null }>({
+  const [fetchResponses, setJson] = useState<{ A: FetchResponse | null; B: FetchResponse | null }>({
     A: null,
     B: null,
   })
@@ -38,18 +38,18 @@ export const Comparer = () => {
     })
 
   const handleOnClickCompareButton = () => {
-    assert(json.A !== null && json.B !== null)
+    assert(fetchResponses.A !== null && fetchResponses.B !== null)
 
-    if (jsonDiff.diff(json.A.json, json.B.json, { keysOnly }) === undefined) {
+    if (jsonDiff.diff(fetchResponses.A.json, fetchResponses.B.json, { keysOnly }) === undefined) {
       setComparedString('no diff.')
     } else {
-      const diff = jsonDiff.diffString(json.A.json, json.B.json, {
+      const diff = jsonDiff.diffString(fetchResponses.A.json, fetchResponses.B.json, {
         color: false,
         full: true,
         keysOnly,
       })
 
-      const prefix = `--- ${json.A.url.toString()}\n+++ ${json.B.url.toString()} \n`
+      const prefix = `--- ${fetchResponses.A.url.toString()}\n+++ ${fetchResponses.B.url.toString()} \n`
       setComparedString(prefix + diff)
     }
   }
@@ -66,14 +66,14 @@ export const Comparer = () => {
       <div className="grid grid-cols-3 gap-5">
         <div>
           <JsonFetcher
-            json={json.A ? JSON.stringify(json.A.json, null, '  ') : '{}'}
+            json={fetchResponses.A ? JSON.stringify(fetchResponses.A.json, null, '  ') : '{}'}
             setJson={setJsonA}
             resetJson={resetJsonA}
           />
         </div>
         <div>
           <JsonFetcher
-            json={json.B ? JSON.stringify(json.B.json, null, '  ') : '{}'}
+            json={fetchResponses.B ? JSON.stringify(fetchResponses.B.json, null, '  ') : '{}'}
             setJson={setJsonB}
             resetJson={resetJsonB}
           />
@@ -82,7 +82,7 @@ export const Comparer = () => {
           <button
             className="py-1 mb-2 px-3 bg-blue-600 text-white rounded disabled:bg-slate-400 disabled:text-gray-200"
             onClick={handleOnClickCompareButton}
-            disabled={json.A === null || json.B === null}
+            disabled={fetchResponses.A === null || fetchResponses.B === null}
           >
             比較
           </button>
